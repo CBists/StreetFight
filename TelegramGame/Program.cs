@@ -1,5 +1,7 @@
 ﻿using TelegramGame.Bot.Core;
 
-var botClient = new StreetFightBot("6148445314:AAELvPOABNGasyf8v33soGVLEb2prAsc8EM");
+if (Environment.GetEnvironmentVariable("token") is not { } token)
+    return;
+var botClient = new StreetFightBot(token);
 botClient.Run();
 Console.ReadLine();
