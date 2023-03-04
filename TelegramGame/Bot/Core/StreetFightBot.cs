@@ -54,14 +54,16 @@ public class StreetFightBot : ITelegramBot
                 photo: new InputMedia(System.IO.File.OpenRead(answer.PhotoPath), "photo"),
                 caption: answer.Text,
                 replyMarkup: answer.ReplyKeyboardMarkup,
-                parseMode: ParseMode.Html);
+                parseMode: ParseMode.Html,
+                cancellationToken: _cancellationToken.Token);
         }
 
         return await _botClient.SendTextMessageAsync(
             chatId: chatId,
             text: answer.Text,
             replyMarkup: answer.ReplyKeyboardMarkup,
-            parseMode: ParseMode.Html);
+            parseMode: ParseMode.Html,
+            cancellationToken: _cancellationToken.Token);
     }
 
     public async Task<Message> EditMessage(long chatId, int messageId, Answer answer)
@@ -72,21 +74,24 @@ public class StreetFightBot : ITelegramBot
                 chatId: chatId,
                 messageId: messageId,
                 replyMarkup: answer.ReplyKeyboardMarkup,
-                media: new InputMediaPhoto(new InputMedia(System.IO.File.OpenRead(answer.PhotoPath), "photo")));
+                media: new InputMediaPhoto(new InputMedia(System.IO.File.OpenRead(answer.PhotoPath), "photo")),
+                cancellationToken: _cancellationToken.Token);
         }
-        
+
         return await _botClient.EditMessageTextAsync(
             chatId: chatId,
             messageId: messageId,
             text: answer.Text,
             replyMarkup: answer.ReplyKeyboardMarkup,
-            parseMode: ParseMode.Html);
+            parseMode: ParseMode.Html,
+            cancellationToken: _cancellationToken.Token);
     }
 
     public void DeleteMessage(long chatId, int messageId)
     {
         _botClient.DeleteMessageAsync(chatId: chatId, messageId: messageId);
     }
+
     Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         var errorMessage = exception switch

@@ -4,7 +4,7 @@ namespace TelegramGame.Data;
 
 public class MainContext : DbContext
 {
-    public DbSet<Entity.User> Users => Set<Entity.User>();
+    public DbSet<Entity.UserEntity> Users => Set<Entity.UserEntity>();
     public MainContext() => Database.EnsureCreated();
  
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

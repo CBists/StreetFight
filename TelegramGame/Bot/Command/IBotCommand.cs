@@ -5,5 +5,5 @@ namespace TelegramGame.Bot.Command;
 
 public interface IBotCommand
 {
-    void Execute(long chatId, Display display);
+    void Execute(Display display);
 }

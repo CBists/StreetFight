@@ -1,12 +1,14 @@
-﻿namespace TelegramGame.Data.Entity;
+﻿using System.ComponentModel.DataAnnotations;
 
-public class User
+namespace TelegramGame.Data.Entity;
+public class UserEntity
 {
+    [Key]
     public long ChatId { get; set; }
     public string? Name { get; set; }
     public int MessageId { get; set; }
     public int Strange { get; set; }
     public int Agility { get; set; }
     public int Money { get; set; }
-    public List<int> Inventory { get; set; } = new();
+    public string Inventory { get; set; }
 }

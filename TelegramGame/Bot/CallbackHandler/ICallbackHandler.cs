@@ -1,6 +1,8 @@
-﻿namespace TelegramGame.Bot.CallbackHandler;
+﻿using TelegramGame.User;
+
+namespace TelegramGame.Bot.CallbackHandler;
 
 public interface ICallbackHandler
 {
-    void HandleCallback(long chatId, string data);
+    void HandleCallback(Display display, string data);
 }

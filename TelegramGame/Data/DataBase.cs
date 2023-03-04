@@ -1,27 +1,35 @@
-﻿namespace TelegramGame.Data;
+﻿using TelegramGame.Data.Entity;
+
+namespace TelegramGame.Data;
 
 public class DataBase
 {
-    private readonly MainContext _bd;
+    private readonly MainContext _db;
 
     public DataBase()
     {
-        _bd = new MainContext();
+        _db = new MainContext();
     }
 
-    public void AddUser(Entity.User user)
+    public void UpdateUser(UserEntity userEntity)
     {
-        _bd.Add(user);
-        _bd.SaveChanges();
+        var users = _db.Users.Where(o => userEntity.ChatId == o.ChatId).ToList();
+        if (users.Count == 0)
+            _db.Add(userEntity);
+        else
+            users[0] = userEntity;
+        _db.SaveChanges();
     }
 
     public void Save()
     {
-        _bd.SaveChanges();
+        _db.SaveChanges();
     }
 
-    public Entity.User GetUserById(long chatId)
+    public Entity.UserEntity? GetUserById(long chatId)
     {
-        return _bd.Users.Where(o => o.ChatId == chatId).ToList()[0];
+        var users = _db.Users.Where(o => o.ChatId == chatId).ToList();
+        return users.Count != 0 ? users[0] : null;
+        
     }
 }
