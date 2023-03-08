@@ -11,4 +11,5 @@ public class UserEntity
     public int Agility { get; set; }
     public int Money { get; set; }
     public string Inventory { get; set; }
+    
 }

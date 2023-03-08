@@ -11,7 +11,7 @@ public class Display
     private int messageId;
     private bool isFirstMessage = true;
     private readonly ITelegramBot _bot;
-    private readonly UserData _user;
+    public UserData User { get; }
     private readonly DataBase _db;
     public bool IsNewPlayer = true;
     public Stage Stage = Stage.NONE;
@@ -25,9 +25,10 @@ public class Display
         if (user is { })
         {
             IsNewPlayer = false;
+            isFirstMessage = false;
             messageId = user.MessageId;
             var inv = JsonSerializer.Deserialize<List<int>>(new MemoryStream(Encoding.UTF8.GetBytes(user.Inventory)));
-            _user = new UserData()
+            User = new UserData()
             {
                 Agility = user.Agility,
                 Inventory = inv is { } ? inv : new List<int>(),
@@ -37,7 +38,7 @@ public class Display
             };
         }
         else
-            _user = new UserData();
+            User = new UserData();
     }
 
     public void UpdateMainMessage(Answer answer)
@@ -46,6 +47,7 @@ public class Display
         {
             messageId = _bot.SendMessage(ChatId, answer).Result.MessageId;
             isFirstMessage = false;
+            UpdateDataInDb();
         }
         else
         {
@@ -57,36 +59,33 @@ public class Display
             {
                 if (ex.Message == "One or more errors occurred. (Bad Request: message to edit not found)")
                     messageId = _bot.SendMessage(ChatId, answer).Result.MessageId;
+                UpdateDataInDb();
             }
         }
     }
 
     public void RegisterUser(string name)
     {
-        _user.Name = name;
-        _user.Inventory = new List<int>();
-        _user.Agility = 3;
-        _user.Money = 100;
-        _user.Strange = 3;
+        User.Name = name;
+        User.Inventory = new List<int>();
+        User.Agility = 3;
+        User.Money = 100;
+        User.Strange = 3;
         UpdateDataInDb();
         IsNewPlayer = false;
     }
 
-    public string? GetName()
-    {
-        return _user.Name;
-    }
     private void UpdateDataInDb()
     {
         var user = new Data.Entity.UserEntity()
         {
             ChatId = ChatId,
             MessageId = messageId,
-            Name = _user.Name,
-            Agility = _user.Agility,
-            Inventory = JsonSerializer.Serialize(_user.Inventory),
-            Money = _user.Money,
-            Strange = _user.Strange
+            Name = User.Name,
+            Agility = User.Agility,
+            Inventory = JsonSerializer.Serialize(User.Inventory),
+            Money = User.Money,
+            Strange = User.Strange
         };
         _db.UpdateUser(user);
     }

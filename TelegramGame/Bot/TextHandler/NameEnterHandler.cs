@@ -1,4 +1,5 @@
-﻿using TelegramGame.Bot.Core;
+﻿using Telegram.Bot.Types.ReplyMarkups;
+using TelegramGame.Bot.Core;
 using TelegramGame.User;
 
 namespace TelegramGame.Bot.TextHandler;
@@ -8,22 +9,20 @@ public class NameEnterHandler : ITextHandler
     public void HandleTextData(Display display, string text)
     {
         var answer = new Answer();
-        if (CheckName(text))
+        if (text.All(letter => char.IsLetterOrDigit(letter) || letter == '_'))
         {
             display.RegisterUser(text);
             display.Stage = Stage.NONE;
-            answer.Text = "Привет, " + text;
+            answer.Text = HarvestedMessages.StartCommand.GetMessageText(display.User.Name);
+            var buttonInText = HarvestedMessages.StartCommand.GetMessageButton().Split(":");
+            answer.ReplyKeyboardMarkup = new InlineKeyboardMarkup(new List<InlineKeyboardButton>
+            {
+                InlineKeyboardButton.WithCallbackData(buttonInText[0], buttonInText[1])
+            });
         }
         else
             answer.Text = "Неверный формат ника";
-        display.UpdateMainMessage(answer);
-    }
 
-    private bool CheckName(string name)
-    {
-        foreach (var letter in name)
-            if (!char.IsLetterOrDigit(letter) && letter != '_')
-                return false;
-        return true;
+        display.UpdateMainMessage(answer);
     }
 }

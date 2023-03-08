@@ -21,28 +21,34 @@ public class UpdateProcessor
         _bot = bot;
         _commands = new()
         {
-            { "/start", new StartCommand() }
+            { "/start", new StartCommand() },
+            { "/menu", new MenuCommand() },
         };
         _textHandlers = new()
         {
             { Stage.ENTER_NAME, new NameEnterHandler() }
         };
+        _callbackHandlers = new()
+        {
+            { "menu", new MenuHandler() }
+        };
         _db = new DataBase();
     }
 
-    public void ProcessCommands(long chatId, Update update)
+    public void Process(long chatId, Update update)
     {
         if (!_displays.Keys.Contains(chatId))
             _displays[chatId] = new Display(chatId, _bot, _db);
         string data = "";
+        if (update.Message is { })
+            _bot.DeleteMessage(chatId, update.Message.MessageId);
         if (update.Message?.Text is { })
         {
             data = update.Message.Text;
-            _bot.DeleteMessage(chatId, update.Message.MessageId);
         }
 
-        if (update.CallbackQuery?.Message?.Text is { })
-            data = update.CallbackQuery.Message.Text;
+        if (update.CallbackQuery?.Data is { })
+            data = update.CallbackQuery.Data;
         HandleText(chatId, data);
         HandleCommand(chatId, data);
         HandleCallback(chatId, data);

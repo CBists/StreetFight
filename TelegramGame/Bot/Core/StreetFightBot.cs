@@ -38,11 +38,13 @@ public class StreetFightBot : ITelegramBot
 
     async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        if (update.Message is { } message)
-        {
-            var chatId = message.Chat.Id;
-            _updateProcessor.ProcessCommands(chatId, update);
-        }
+        Message? message = null;
+        if (update.Message is { })
+            message = update.Message;
+        if (update.CallbackQuery?.Message is { })
+            message = update.CallbackQuery?.Message;
+        if(message is {})
+            _updateProcessor.Process(message.Chat.Id, update);
     }
 
     public async Task<Message> SendMessage(long chatId, Answer answer)

@@ -1,4 +1,5 @@
-﻿using TelegramGame.Data.Entity;
+﻿using System.Net.Sockets;
+using TelegramGame.Data.Entity;
 
 namespace TelegramGame.Data;
 
@@ -13,12 +14,12 @@ public class DataBase
 
     public void UpdateUser(UserEntity userEntity)
     {
-        var users = _db.Users.Where(o => userEntity.ChatId == o.ChatId).ToList();
-        if (users.Count == 0)
-            _db.Add(userEntity);
+        var user = _db.Users.FirstOrDefault(o => o.ChatId == userEntity.ChatId);
+        if (user is { })
+            SetNewValue(user, userEntity);
         else
-            users[0] = userEntity;
-        _db.SaveChanges();
+            _db.Users.Add(userEntity);
+        Save();
     }
 
     public void Save()
@@ -26,10 +27,18 @@ public class DataBase
         _db.SaveChanges();
     }
 
-    public Entity.UserEntity? GetUserById(long chatId)
+    public UserEntity? GetUserById(long chatId)
     {
-        var users = _db.Users.Where(o => o.ChatId == chatId).ToList();
-        return users.Count != 0 ? users[0] : null;
-        
+        return _db.Users.FirstOrDefault(o => o.ChatId == chatId);
+    }
+
+    private void SetNewValue(UserEntity old, UserEntity newValue)
+    {
+        old.Name = newValue.Name;
+        old.Strange = newValue.Strange;
+        old.Agility = newValue.Agility;
+        old.Money = newValue.Money;
+        old.MessageId = newValue.MessageId;
+        old.Inventory = newValue.Inventory;
     }
 }
