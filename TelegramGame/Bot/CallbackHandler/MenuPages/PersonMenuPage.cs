@@ -21,8 +21,8 @@ public class PersonMenuPage : IMenuPage
             Text = text.ToString(),
             ReplyKeyboardMarkup = new InlineKeyboardMarkup(new List<List<InlineKeyboardButton>>
             {
+                InlineKeyboardButton.WithCallbackData("Инвентарь", "menu inventory").ListOf(),
                 InlineKeyboardButton.WithCallbackData("Назад", "/menu").ListOf(),
-                InlineKeyboardButton.WithCallbackData("Инвентарь", "menu inventory").ListOf()
             })
         };
         return answer;

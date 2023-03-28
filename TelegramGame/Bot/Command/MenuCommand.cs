@@ -2,6 +2,7 @@
 using TelegramGame.Bot.Core;
 using TelegramGame.Extension;
 using TelegramGame.User;
+using TelegramGame.HarvestedMessages;
 
 namespace TelegramGame.Bot.Command;
 
@@ -11,7 +12,7 @@ public class MenuCommand : IBotCommand
     {
         var answer = new Answer { Text = "Главное меню" };
         var buttons = new List<List<InlineKeyboardButton>>();
-        foreach (var line in HarvestedMessages.MainMenuCommand.GetButtons().Split(Environment.NewLine))
+        foreach (var line in MenuCommandMessages.GetButtons().Split(Environment.NewLine))
         {
             var data = line.Split(":");
             buttons.Add(InlineKeyboardButton.WithCallbackData(data[0], data[1]).ListOf());

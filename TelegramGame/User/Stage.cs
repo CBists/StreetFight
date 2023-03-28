@@ -3,5 +3,6 @@
 public enum Stage
 {
     NONE,
-    ENTER_NAME
+    ENTER_NAME,
+    IN_GAME
 }

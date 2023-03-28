@@ -1,6 +1,6 @@
 ﻿namespace TelegramGame.HarvestedMessages;
 
-public class MainMenuCommand
+public class MenuCommandMessages
 {
     public static string GetButtons()
     {

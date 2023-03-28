@@ -13,8 +13,8 @@ public class NameEnterHandler : ITextHandler
         {
             display.RegisterUser(text);
             display.Stage = Stage.NONE;
-            answer.Text = HarvestedMessages.StartCommand.GetMessageText(display.User.Name);
-            var buttonInText = HarvestedMessages.StartCommand.GetMessageButton().Split(":");
+            answer.Text = HarvestedMessages.StartCommandMessages.GetMessageText(display.User.Name);
+            var buttonInText = HarvestedMessages.StartCommandMessages.GetMessageButton().Split(":");
             answer.ReplyKeyboardMarkup = new InlineKeyboardMarkup(new List<InlineKeyboardButton>
             {
                 InlineKeyboardButton.WithCallbackData(buttonInText[0], buttonInText[1])

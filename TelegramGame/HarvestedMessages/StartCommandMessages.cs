@@ -1,6 +1,6 @@
 ﻿namespace TelegramGame.HarvestedMessages;
 
-public class StartCommand
+public class StartCommandMessages
 {
     public static string GetMessageText(string? name)
     {

@@ -1,21 +1,27 @@
 ﻿using System.Text;
+using System.Text.Json;
+using Telegram.Bot.Types.ReplyMarkups;
 using TelegramGame.Bot.Core;
 using TelegramGame.Data;
-using System.Text.Json;
+using TelegramGame.Game;
+using TelegramGame.Game.Entity;
 
 namespace TelegramGame.User;
 
 public class Display
 {
-    public long ChatId { get; private set; }
-    private int messageId;
-    private bool isFirstMessage = true;
+    private static BattleCore _battleCore = new BattleCore();
+    private int _messageId;
+    private bool _isFirstMessage = true;
     private readonly ITelegramBot _bot;
-    public UserData User { get; }
     private readonly DataBase _db;
+    
+    private long ChatId { get; }
+    public UserData User { get; }
     public bool IsNewPlayer = true;
     public Stage Stage = Stage.NONE;
-
+    public BattlePackage Package = new BattlePackage();
+    public GameUser? GameUser { get; private set; }
     public Display(long chatId, ITelegramBot bot, DataBase db)
     {
         ChatId = chatId;
@@ -25,13 +31,13 @@ public class Display
         if (user is { })
         {
             IsNewPlayer = false;
-            isFirstMessage = false;
-            messageId = user.MessageId;
+            _isFirstMessage = false;
+            _messageId = user.MessageId;
             var inv = JsonSerializer.Deserialize<List<int>>(new MemoryStream(Encoding.UTF8.GetBytes(user.Inventory)));
             User = new UserData()
             {
                 Agility = user.Agility,
-                Inventory = inv is { } ? inv : new List<int>(),
+                Inventory = inv ?? new List<int>(),
                 Money = user.Money,
                 Name = user.Name,
                 Strange = user.Strange
@@ -43,22 +49,22 @@ public class Display
 
     public void UpdateMainMessage(Answer answer)
     {
-        if (isFirstMessage)
+        if (_isFirstMessage)
         {
-            messageId = _bot.SendMessage(ChatId, answer).Result.MessageId;
-            isFirstMessage = false;
+            _messageId = _bot.SendMessage(ChatId, answer).Result.MessageId;
+            _isFirstMessage = false;
             UpdateDataInDb();
         }
         else
         {
             try
             {
-                var a = _bot.EditMessage(ChatId, messageId, answer).Result;
+                _bot.EditMessage(ChatId, _messageId, answer);
             }
             catch (Exception ex)
             {
                 if (ex.Message == "One or more errors occurred. (Bad Request: message to edit not found)")
-                    messageId = _bot.SendMessage(ChatId, answer).Result.MessageId;
+                    _messageId = _bot.SendMessage(ChatId, answer).Result.MessageId;
                 UpdateDataInDb();
             }
         }
@@ -68,19 +74,19 @@ public class Display
     {
         User.Name = name;
         User.Inventory = new List<int>();
-        User.Agility = 3;
+        User.Agility = 20;
         User.Money = 100;
-        User.Strange = 3;
+        User.Strange = 30;
         UpdateDataInDb();
         IsNewPlayer = false;
     }
-
+    
     private void UpdateDataInDb()
     {
         var user = new Data.Entity.UserEntity()
         {
             ChatId = ChatId,
-            MessageId = messageId,
+            MessageId = _messageId,
             Name = User.Name,
             Agility = User.Agility,
             Inventory = JsonSerializer.Serialize(User.Inventory),
@@ -88,5 +94,59 @@ public class Display
             Strange = User.Strange
         };
         _db.UpdateUser(user);
+    }
+
+    public void UpdateFightInfo()
+    {
+        if(GameUser is not {})
+            return;
+        var enemy = GameUser.GetEnemy();
+        StringBuilder text = new("");
+        text.AppendLine($"Ваше здоровье: {GameUser.Hp}");
+        text.AppendLine($"Здоровье противника: {enemy.Hp}");
+        if (GameUser.Hp <= 0 && enemy.Hp <= 0)
+            text.AppendLine("\nНичья!");
+        else if (GameUser.Hp <= 0)
+            text.AppendLine("\nПоражение!");
+        else if (enemy.Hp <= 0)
+            text.AppendLine("\nПобеда!");
+        var answer = new Answer();
+        if(GameUser.Hp <= 0 || enemy.Hp <= 0)
+        {
+            answer.ReplyKeyboardMarkup = new InlineKeyboardMarkup(new List<InlineKeyboardButton>
+            {
+                InlineKeyboardButton.WithCallbackData("Главное меню", "/menu")
+            });
+            GameUser = null;
+        }
+        else
+        {
+            answer.ReplyKeyboardMarkup = new InlineKeyboardMarkup(new List<InlineKeyboardButton>
+            {
+                InlineKeyboardButton.WithCallbackData("Голова", "battle 1"),
+                InlineKeyboardButton.WithCallbackData("Тело", "battle 2"),
+                InlineKeyboardButton.WithCallbackData("Ноги", "battle 3")
+            });
+        }
+        answer.Text = text.ToString();
+        UpdateMainMessage(answer);
+    }
+
+    public void StartFightWithBot()
+    {
+        GameUser = _battleCore.RegisterOnFightWithBot(this);
+        UpdateFightInfo();
+    }
+
+    public void SetupPackage(int action)
+    {
+        if (Package.Attack == BodyParts.None)
+            Package.Attack = (BodyParts)action;
+        else
+        {
+            Package.Def = (BodyParts)action;
+            GameUser.SendPackage();
+            Package = new BattlePackage();
+        }
     }
 }

@@ -7,6 +7,6 @@ public class InventoryPage : IMenuPage
 {
     public Answer Get(Display display, string data)
     {
-        return null;
+        return new Answer();
     }
 }
