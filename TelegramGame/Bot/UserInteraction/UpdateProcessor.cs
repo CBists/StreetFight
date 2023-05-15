@@ -40,7 +40,11 @@ public class UpdateProcessor
     public void Process(long chatId, Update update)
     {
         if (!_displays.Keys.Contains(chatId))
+        {
             _displays[chatId] = new Display(chatId, _bot, _db);
+            _commands["/start"].Execute(_displays[chatId]);
+            return;
+        }
         string data = "";
         string callbackData = "";
         if (update.Message is { })
@@ -52,7 +56,7 @@ public class UpdateProcessor
         HandleText(chatId, data);
         HandleCommand(chatId, data);
         HandleCallback(chatId, callbackData);
-        HandleCallbackCommand(chatId, callbackData);
+        HandleCommand(chatId, callbackData);
     }
 
     public void HandleCommand(long chatId, string command)
@@ -68,13 +72,6 @@ public class UpdateProcessor
         if (_callbackHandlers.Keys.Contains(prefix))
             _callbackHandlers[prefix].HandleCallback(_displays[chatId], data);
     } 
-    public void HandleCallbackCommand(long chatId, string data)
-    {
-        var prefix = data.ToLower().Split()[0];
-        if (_commands.Keys.Contains(prefix))
-            _commands[prefix].Execute(_displays[chatId]);
-    }
-
     public void HandleText(long chatId, string text)
     {
         if (_displays.Keys.Contains(chatId) && _textHandlers.Keys.Contains(_displays[chatId].Stage))

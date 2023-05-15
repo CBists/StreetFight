@@ -14,7 +14,7 @@ public class PersonMenuPage : IMenuPage
         text.AppendLine($"{display.User.Name}:");
         text.AppendLine($"Сила: {display.User.Strange}");
         text.AppendLine($"Ловкость: {display.User.Agility}");
-        text.AppendLine($"Денег: {display.User.Money}");
+        text.AppendLine($"Золото: {display.User.Money}");
 
         var answer = new Answer
         {

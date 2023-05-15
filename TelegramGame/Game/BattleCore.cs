@@ -5,18 +5,36 @@ namespace TelegramGame.Game;
 
 public class BattleCore
 {
-    private List<IGamePlayer> _queue = new();
+    private List<GameUser> _queue = new();
 
     public GameUser RegisterOnFightWithBot(Display display)
     {
         var player = new GameUser(display);
         var bot = new GameBot(player.Rank);
         var session = new Session(player, bot);
-        player.SetPackageEvent += session.SetPlayerPackageEvent;
-        bot.SetPackageEvent += session.SetPlayerPackageEvent;
-        player.GetEnemyEvent += session.GetEnemyEvent;
-        bot.GetEnemyEvent += session.GetEnemyEvent;
+        player.FindEnemy();
         bot.Start();
         return player;
+    }
+
+    public GameUser RegisterOnFight(Display display)
+    {
+        var player = new GameUser(display);
+        if (_queue.Count == 1)
+        {
+            var enemy = _queue[0];
+            _queue.RemoveAt(0);
+            var session = new Session(player, enemy);
+            enemy.FindEnemy();
+            player.FindEnemy();
+        }
+        else
+            _queue.Add(player);
+        return player;
+    }
+
+    public void LeaveFromQueue(Display display)
+    {
+        _queue = new List<GameUser>();
     }
 }

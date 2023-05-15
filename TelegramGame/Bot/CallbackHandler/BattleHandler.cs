@@ -12,7 +12,9 @@ public class BattleHandler: ICallbackHandler
         if (splitedData[1] == "bot")
             display.StartFightWithBot();
         else if (splitedData[1] == "player")
-            return;
+            display.StartFightWithPlayer();
+        else if(splitedData[1] == "leave")
+            display.LeaveFromQueue();
         else
             display.SetupPackage(Int32.Parse(splitedData[1]));
     }

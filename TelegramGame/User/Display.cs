@@ -3,6 +3,7 @@ using System.Text.Json;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramGame.Bot.Core;
 using TelegramGame.Data;
+using TelegramGame.Extension;
 using TelegramGame.Game;
 using TelegramGame.Game.Entity;
 
@@ -10,18 +11,22 @@ namespace TelegramGame.User;
 
 public class Display
 {
-    private static BattleCore _battleCore = new BattleCore();
+    private static BattleCore battleCore = new BattleCore();
     private int _messageId;
     private bool _isFirstMessage = true;
     private readonly ITelegramBot _bot;
     private readonly DataBase _db;
-    
+    private bool _isAttack = true;
+    private bool _isFoundEnemy = false;
+    private bool _isEnemyPacketReady = false;
+    private bool _isPacketReady = false;
     private long ChatId { get; }
     public UserData User { get; }
     public bool IsNewPlayer = true;
     public Stage Stage = Stage.NONE;
     public BattlePackage Package = new BattlePackage();
     public GameUser? GameUser { get; private set; }
+
     public Display(long chatId, ITelegramBot bot, DataBase db)
     {
         ChatId = chatId;
@@ -63,8 +68,7 @@ public class Display
             }
             catch (Exception ex)
             {
-                if (ex.Message == "One or more errors occurred. (Bad Request: message to edit not found)")
-                    _messageId = _bot.SendMessage(ChatId, answer).Result.MessageId;
+                _messageId = _bot.SendMessage(ChatId, answer).Result.MessageId;
                 UpdateDataInDb();
             }
         }
@@ -80,7 +84,7 @@ public class Display
         UpdateDataInDb();
         IsNewPlayer = false;
     }
-    
+
     private void UpdateDataInDb()
     {
         var user = new Data.Entity.UserEntity()
@@ -98,55 +102,131 @@ public class Display
 
     public void UpdateFightInfo()
     {
-        if(GameUser is not {})
+        if (GameUser is null)
             return;
         var enemy = GameUser.GetEnemy();
-        StringBuilder text = new("");
-        text.AppendLine($"Ваше здоровье: {GameUser.Hp}");
-        text.AppendLine($"Здоровье противника: {enemy.Hp}");
-        if (GameUser.Hp <= 0 && enemy.Hp <= 0)
-            text.AppendLine("\nНичья!");
-        else if (GameUser.Hp <= 0)
-            text.AppendLine("\nПоражение!");
-        else if (enemy.Hp <= 0)
-            text.AppendLine("\nПобеда!");
         var answer = new Answer();
-        if(GameUser.Hp <= 0 || enemy.Hp <= 0)
+        if (GameUser.Hp <= 0 || enemy.Hp <= 0)
         {
             answer.ReplyKeyboardMarkup = new InlineKeyboardMarkup(new List<InlineKeyboardButton>
             {
                 InlineKeyboardButton.WithCallbackData("Главное меню", "/menu")
             });
-            GameUser = null;
         }
         else
         {
-            answer.ReplyKeyboardMarkup = new InlineKeyboardMarkup(new List<InlineKeyboardButton>
+            var action = _isAttack ? "Атака" : "Защита";
+            answer.ReplyKeyboardMarkup = new InlineKeyboardMarkup(new List<List<InlineKeyboardButton>>
             {
-                InlineKeyboardButton.WithCallbackData("Голова", "battle 1"),
-                InlineKeyboardButton.WithCallbackData("Тело", "battle 2"),
-                InlineKeyboardButton.WithCallbackData("Ноги", "battle 3")
+                InlineKeyboardButton.WithCallbackData($"{action} Голова", "battle 1").ListOf(),
+                InlineKeyboardButton.WithCallbackData($"{action} Тело", "battle 2").ListOf(),
+                InlineKeyboardButton.WithCallbackData($"{action} Ноги", "battle 3").ListOf()
             });
         }
-        answer.Text = text.ToString();
+
+        answer.Text = CreateTextMessageFight();
         UpdateMainMessage(answer);
     }
 
+    public void StartFightWithPlayer()
+    {
+        _isFoundEnemy = false;
+        GameUser = battleCore.RegisterOnFight(this);
+        if (_isFoundEnemy)
+            UpdateFightInfo();
+        else
+            MessageSearchingEnemy();
+    }
     public void StartFightWithBot()
     {
-        GameUser = _battleCore.RegisterOnFightWithBot(this);
+        GameUser = battleCore.RegisterOnFightWithBot(this);
         UpdateFightInfo();
     }
-
     public void SetupPackage(int action)
     {
-        if (Package.Attack == BodyParts.None)
+        if (GameUser is null) return;
+        if (_isAttack)
+        {
             Package.Attack = (BodyParts)action;
+            _isAttack = false;
+            UpdateFightInfo();
+        }
         else
         {
             Package.Def = (BodyParts)action;
+            _isAttack = true;
+            _isPacketReady = true;
             GameUser.SendPackage();
-            Package = new BattlePackage();
+            MessageWaitingEnemy();
         }
     }
+
+    private string CreateTextMessageFight()
+    {
+        var enemy = GameUser.GetEnemy();
+        StringBuilder text = new($"{GameUser.Name} vs {enemy.Name}");
+        text.AppendLine("");
+        text.AppendLine($"Ваше здоровье: {GameUser.Hp}");
+        text.AppendLine($"Здоровье противника: {enemy.Hp}");
+        if (GameUser.Hp <= 0 && enemy.Hp <= 0)
+            text.AppendLine("\nНичья!");
+        else if (GameUser.Hp <= 0)
+        {
+            text.AppendLine("\nПоражение!");
+            text.AppendLine("Результат: -5 золота");
+            User.Money = Math.Max(User.Money - 5, 0);
+            UpdateDataInDb();
+        }
+        else if (enemy.Hp <= 0)
+        {
+            text.AppendLine("\nПобеда!");
+            text.AppendLine("Результат: +5 золота");
+            User.Money += 5;
+            UpdateDataInDb();
+        }
+        return text.ToString();
+    }
+
+    private void MessageSearchingEnemy()
+    {
+        var text = "Ожидание соперника";
+        var answer = new Answer();
+        answer.ReplyKeyboardMarkup = new InlineKeyboardMarkup(new List<List<InlineKeyboardButton>>
+        {
+            InlineKeyboardButton.WithCallbackData($"Отменить поиск", "battle leave").ListOf(),
+        });
+        answer.Text = text;
+        UpdateMainMessage(answer);
+    }
+
+    private void MessageWaitingEnemy()
+    {
+        if (_isPacketReady)
+        {
+            if (_isEnemyPacketReady)
+            {
+                _isPacketReady = false;
+                _isEnemyPacketReady = false;
+            }
+            else
+            {
+                var answer = new Answer();
+                answer.Text = "Ожидание хода соперника";
+                UpdateMainMessage(answer);
+            }
+        }
+    }
+    public void FindEnemy()
+    {
+        _isFoundEnemy = true;
+        UpdateFightInfo();
+    }
+
+    public void ChangeEnemyStatus()
+    {
+        _isEnemyPacketReady = true;
+        MessageWaitingEnemy();
+    }
+
+    public void LeaveFromQueue() => battleCore.LeaveFromQueue(this);
 }
