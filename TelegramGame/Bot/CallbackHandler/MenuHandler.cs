@@ -11,7 +11,8 @@ public class MenuHandler : ICallbackHandler
     private Dictionary<string, IMenuPage> _pages = new()
     {
         {"person", new PersonMenuPage()},
-        {"battle", new BattlePage()}
+        {"battle", new BattlePage()},
+        {"shop", new ShopPage()}
     };
     public void HandleCallback(Display display, string data)
     {

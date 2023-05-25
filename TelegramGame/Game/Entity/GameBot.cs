@@ -8,13 +8,7 @@ public class GameBot : IGamePlayer
     public int Rank => (Hp / 3) + Power;
     public event Action<IGamePlayer> SetPackageEvent; 
     public event Func<IGamePlayer, IGamePlayer> GetEnemyEvent;
-
-    public BattlePackage Package => new BattlePackage()
-    {
-        Attack = (BodyParts)(new Random().Next(3) + 1),
-        Def = (BodyParts)(new Random().Next(3) + 1),
-        Ready = true
-    };
+    public BattlePackage Package { get; private set; }
 
     public GameBot(int rank)
     {
@@ -26,18 +20,25 @@ public class GameBot : IGamePlayer
 
     public void Start()
     {
+        Package = new BattlePackage()
+        {
+            Attack = (BodyParts)(new Random().Next(3) + 1),
+            Def = (BodyParts)(new Random().Next(3) + 1),
+            Ready = true
+        };
         SetPackageEvent(this);
     }
     public void SendResult()
     {
+        Package = new BattlePackage()
+        {
+            Attack = (BodyParts)(new Random().Next(3) + 1),
+            Def = (BodyParts)(new Random().Next(3) + 1),
+            Ready = true
+        };
         if(Hp > 0 && GetEnemyEvent(this).Hp > 0)
             SetPackageEvent(this);
     }
-
-    public void ResetPackage()
-    {
-    }
-
     public void EnemyConfirmPackage()
     {
         

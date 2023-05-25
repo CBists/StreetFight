@@ -85,7 +85,7 @@ public class Display
         IsNewPlayer = false;
     }
 
-    private void UpdateDataInDb()
+    public void UpdateDataInDb()
     {
         var user = new Data.Entity.UserEntity()
         {
@@ -124,7 +124,7 @@ public class Display
             });
         }
 
-        answer.Text = CreateTextMessageFight();
+        answer.Text = GetTextMessageFight();
         UpdateMainMessage(answer);
     }
 
@@ -148,23 +148,34 @@ public class Display
         if (_isAttack)
         {
             Package.Attack = (BodyParts)action;
+            Package.Ready = false;
             _isAttack = false;
             UpdateFightInfo();
         }
         else
         {
             Package.Def = (BodyParts)action;
+            Package.Ready = true;
             _isAttack = true;
             _isPacketReady = true;
-            GameUser.SendPackage();
             MessageWaitingEnemy();
+            GameUser.SendPackage();
         }
     }
 
-    private string CreateTextMessageFight()
+    private string GetTextMessageFight()
     {
         var enemy = GameUser.GetEnemy();
         StringBuilder text = new($"{GameUser.Name} vs {enemy.Name}");
+        if (Package.Ready && enemy.Package.Ready)
+        {
+            text.AppendLine("");
+            text.AppendLine("");
+            text.AppendLine($"Вы ударили {Package.Attack}");
+            text.AppendLine($"Противник защитил {enemy.Package.Def}");
+            text.AppendLine($"Вы защитили {Package.Def}");
+            text.AppendLine($"Противник ударил {enemy.Package.Attack}");
+        }
         text.AppendLine("");
         text.AppendLine($"Ваше здоровье: {GameUser.Hp}");
         text.AppendLine($"Здоровье противника: {enemy.Hp}");

@@ -24,6 +24,7 @@ public class UpdateProcessor
         {
             { "/start", new StartCommand() },
             { "/menu", new MenuCommand() },
+            { "/help", new HelpCommand() },
         };
         _textHandlers = new()
         {
@@ -33,9 +34,10 @@ public class UpdateProcessor
         {
             { "menu", new MenuHandler() },
             { "battle", new BattleHandler() },
+            { "shop", new ShopHandler() },
         };
         _db = new DataBase();
-    }
+    } 
 
     public void Process(long chatId, Update update)
     {

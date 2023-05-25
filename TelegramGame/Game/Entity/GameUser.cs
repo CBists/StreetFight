@@ -12,7 +12,6 @@ public class GameUser : IGamePlayer
     public BattlePackage Package => _display.Package;
     public event Action<IGamePlayer> SetPackageEvent; 
     public event Func<IGamePlayer, IGamePlayer> GetEnemyEvent;
-
     public GameUser(Display display)
     {
         Hp = display.User.Strange * 3;

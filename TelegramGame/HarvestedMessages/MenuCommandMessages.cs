@@ -6,7 +6,8 @@ public class MenuCommandMessages
     {
         string menuString = @"В бой:menu battle
 Мой персонаж:menu person
-Магазин:menu shop";
+Магазин:menu shop
+Правила:/help";
         return menuString;
     }
 }
